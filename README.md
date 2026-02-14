@@ -8,7 +8,8 @@
 5. [Résolution des Problèmes](#résolution-des-problèmes)
 
 ---
-
+![الصفحة الرئيسية](https://raw.githubusercontent.com/elmaatouquii/cooperatives-site/main/image.png
+)
 ## 🔧 Prérequis
 
 Avant de commencer, assurez-vous d'avoir installé:
