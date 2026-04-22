@@ -12,6 +12,7 @@ return new class extends Migration
             $table->id();
             $table->string('nom');
             $table->string('email')->unique();
+            $table->string('ville')->nullable();
             $table->text('description')->nullable();
             $table->string('adresse')->nullable();
             $table->string('image')->nullable();

@@ -31,7 +31,7 @@ Route::post('/register', [AuthController::class, 'register']);
 
 // ===== PROTECTED ROUTES =====
 Route::middleware('auth:sanctum')->group(function () {
-    
+
     // Current user routes
     Route::get('/me', [AuthController::class, 'me']);
     Route::post('/logout', [AuthController::class, 'logout']);
@@ -39,28 +39,36 @@ Route::middleware('auth:sanctum')->group(function () {
     // ===== ADMIN ROUTES =====
     Route::middleware('role:admin')->prefix('admin')->group(function () {
         Route::get('/dashboard', [AdminDashboardController::class, 'index']);
-        
+
         // Users CRUD routes
         Route::get('/users', [UserManagementController::class, 'index']);
         Route::post('/users', [UserManagementController::class, 'store']);
         Route::put('/users/{id}', [UserManagementController::class, 'update']);
         Route::delete('/users/{id}', [UserManagementController::class, 'destroy']);
-        
-        // Cooperatives CRUD routes - ADMIN ONLY MANAGES COOPERATIVES
+
+        // Cooperatives CRUD routes
+        // Supports ?region=Tinghir (or any province) for the interactive map
         Route::get('/cooperatives', [CooperativeController::class, 'index']);
         Route::post('/cooperatives', [CooperativeController::class, 'store']);
         Route::get('/cooperatives/{id}', [CooperativeController::class, 'show']);
         Route::put('/cooperatives/{id}', [CooperativeController::class, 'update']);
         Route::delete('/cooperatives/{id}', [CooperativeController::class, 'destroy']);
+
+        // Products CRUD routes (admin view)
+        Route::get('/products', [AdminProductController::class, 'index']);
+        Route::post('/products', [AdminProductController::class, 'store']);
+        Route::get('/products/{id}', [AdminProductController::class, 'show']);
+        Route::put('/products/{id}', [AdminProductController::class, 'update']);
+        Route::delete('/products/{id}', [AdminProductController::class, 'destroy']);
     });
 
-    // ===== COOP ROUTES =====
+    // ===== MANAGER ROUTES =====
     Route::middleware('role:manager')->prefix('manager')->group(function () {
         Route::get('/dashboard', [ManagerDashboardController::class, 'index']);
-        
+
         // Cooperatives list (for dropdown in product form)
         Route::get('/cooperatives', [CooperativeController::class, 'index']);
-        
+
         // Products CRUD routes - MANAGER ONLY MANAGES PRODUCTS
         Route::get('/products', [ProductController::class, 'index']);
         Route::post('/products', [ProductController::class, 'store']);

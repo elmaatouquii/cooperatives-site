@@ -12,8 +12,10 @@ class Cooperative extends Model
     protected $fillable = [
         'nom',
         'email',
+        'ville',
         'description',
         'adresse',
+        'region',       // ← added for Drâa-Tafilalet map feature
         'image',
         'contact',
         'tele',
@@ -23,7 +25,7 @@ class Cooperative extends Model
     ];
 
     /**
-     * Get the products for the cooperative
+     * Get the products for the cooperative.
      */
     public function products()
     {

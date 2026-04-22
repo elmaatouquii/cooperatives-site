@@ -17,7 +17,7 @@ const Login = () => {
     setLoading(true);
 
     try {
-      const response = await axios.post("http://127.0.0.1:8000/api/login", {
+      const response = await axios.post("/api/login", {
         email,
         password,
       });
@@ -26,11 +26,10 @@ const Login = () => {
         localStorage.setItem("token", response.data.token);
         localStorage.setItem("user", JSON.stringify(response.data.user));
 
-        if (response.data.user.role === "admin") navigate("/admin/dashboard");
-        else if (response.data.user.role === "manager") navigate("/manager/dashboard");
-        else navigate("/");
-
-        setTimeout(() => window.location.reload(), 100);
+        // Navigate based on role — no reload needed; React Router handles the redirect
+        if (response.data.user.role === "admin") navigate("/admin/dashboard", { replace: true });
+        else if (response.data.user.role === "manager") navigate("/manager/dashboard", { replace: true });
+        else navigate("/", { replace: true });
       } else {
         setError(response.data.message || "Erreur de connexion");
       }

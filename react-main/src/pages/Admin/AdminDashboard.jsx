@@ -1,8 +1,9 @@
-// src/pages/admin/AdminDashboard.jsx
+// src/pages/Admin/AdminDashboard.jsx
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import AdminSidebar from "./AdminSidebar";
 import { Link } from "react-router-dom";
+import RegionMap from "./RegionMap";
 
 const AdminDashboard = () => {
   const [stats, setStats] = useState(null);
@@ -22,7 +23,7 @@ const AdminDashboard = () => {
         alert("Impossible de récupérer les données du dashboard admin");
       }
     };
-    
+
     const fetchRecentMessages = async () => {
       try {
         setLoadingMessages(true);
@@ -63,7 +64,7 @@ const AdminDashboard = () => {
   return (
     <div className="flex min-h-screen bg-stone-50">
       <AdminSidebar />
-      
+
       <div className="flex-1 p-6 lg:p-8">
         {/* Header */}
         <div className="mb-8">
@@ -74,8 +75,8 @@ const AdminDashboard = () => {
             Bienvenue dans votre espace d'administration
           </p>
         </div>
-        
-        {/* Stats Cards - VERT/BRUN */}
+
+        {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-8">
           {/* Total Users */}
           <div className="bg-white p-6 rounded-xl border border-stone-200 hover:border-emerald-700/30 transition-all hover:shadow-md">
@@ -117,8 +118,11 @@ const AdminDashboard = () => {
           </div>
         </div>
 
-        {/* SECTION CONTACT MESSAGES - NOUVELLE */}
-        <div className="bg-white rounded-xl border border-stone-200 overflow-hidden">
+        {/* ── INTERACTIVE REGION MAP ── */}
+        <RegionMap />
+
+        {/* SECTION CONTACT MESSAGES */}
+        <div className="bg-white rounded-xl border border-stone-200 overflow-hidden mt-6">
           {/* Header avec badge */}
           <div className="px-6 py-5 border-b border-stone-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-center gap-3">
@@ -132,19 +136,17 @@ const AdminDashboard = () => {
                 <p className="text-xs text-stone-500">Derniers messages reçus</p>
               </div>
             </div>
-            
+
             <div className="flex items-center gap-4">
-              {/* Badge non lus */}
               {unreadCount > 0 && (
                 <span className="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800 border border-emerald-200">
                   <span className="w-2 h-2 bg-emerald-600 rounded-full mr-1.5 animate-pulse"></span>
                   {unreadCount} nouveau{unreadCount > 1 ? 'x' : ''} non lu(s)
                 </span>
               )}
-              
-              {/* Lien vers tous les messages */}
-              <Link 
-                to="/admin/contacts" 
+
+              <Link
+                to="/admin/contacts"
                 className="text-xs font-medium text-emerald-700 hover:text-emerald-800 flex items-center gap-1 transition-colors"
               >
                 Voir tous
@@ -197,11 +199,11 @@ const AdminDashboard = () => {
                         })}
                       </p>
                     </div>
-                    <button 
-                      onClick={() => {/* Fonction pour marquer comme lu */}}
+                    <button
+                      onClick={() => {}}
                       className={`p-2 rounded-lg transition-colors ${
-                        message.status === 'non lu' 
-                          ? 'text-emerald-700 hover:bg-emerald-50' 
+                        message.status === 'non lu'
+                          ? 'text-emerald-700 hover:bg-emerald-50'
                           : 'text-stone-300 cursor-not-allowed'
                       }`}
                       disabled={message.status !== 'non lu'}

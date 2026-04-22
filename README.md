@@ -183,11 +183,6 @@ php artisan storage:link
 php artisan db:seed --class=EasySeeder
 ```
 
-Cela créera:
-- 1 compte Admin (admin@cooperative.com / admin123)
-- 1 compte Manager (manager@cooperative.com / manager123)
-- Quelques coopératives et produits de test
-
 #### 1.9 Démarrer le serveur Laravel
 ```bash
 php artisan serve
@@ -236,23 +231,6 @@ npm run dev
 2. Aller sur: **http://localhost:5173**
 3. Vous devriez voir la page d'accueil du site
 
----
-
-## 👤 Comptes par Défaut
-
-Si vous avez exécuté le seeder (`php artisan db:seed --class=EasySeeder`), vous avez ces comptes:
-
-### 🔑 Compte Administrateur
-- **Email:** `admin@cooperative.com`
-- **Mot de passe:** `admin123`
-- **Accès:** Gestion des utilisateurs et des coopératives
-
-### 🔑 Compte Manager
-- **Email:** `manager@cooperative.com`
-- **Mot de passe:** `manager123`
-- **Accès:** Gestion des produits
-
----
 
 ## 🎯 Tester que tout fonctionne
 
@@ -275,13 +253,6 @@ Vous devriez voir:
 - ✅ La page d'accueil du site
 - ✅ Un menu de navigation
 - ✅ Des sections Hero, À propos, Contact
-
-### Test 3: Connexion
-1. Cliquer sur "Se connecter"
-2. Entrer: `admin@admin.com` / `admin123`
-3. Vous devriez être redirigé vers le Dashboard Admin
-
----
 
 ## 🔧 Résolution des Problèmes
 
@@ -557,12 +528,6 @@ fixed-project/
 ---
 
 ## 🎓 Premiers Pas après Installation
-
-### 1. Se connecter en tant qu'Admin
-- Aller sur http://localhost:5173
-- Cliquer sur "Se connecter"
-- Email: `admin@admin.com`
-- Password: `admin123`
 
 ### 2. Créer une coopérative
 - Dans le dashboard admin, cliquer "Gérer les coopératives"

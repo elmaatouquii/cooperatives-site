@@ -19,14 +19,16 @@ class EasySeeder extends Seeder
                 'email' => 'admin@test.com',
                 'password' => Hash::make('admin123'),
                 'role' => 'admin',
-                'created_at' => date('Y-m-d H:i:s'),
+                'created_at' => now(),
+                'updated_at' => now(),
             ],
             [
                 'name' => 'Manager User',
                 'email' => 'manager@test.com',
                 'password' => Hash::make('manager123'),
                 'role' => 'manager',
-                'created_at' => date('Y-m-d H:i:s'),
+                'created_at' => now(),
+                'updated_at' => now(),
             ],
         ]);
         

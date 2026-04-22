@@ -9,24 +9,38 @@ use Illuminate\Support\Facades\Validator;
 
 class CooperativeController extends Controller
 {
-    public function index()
+    // =========================================================
+    // LIST + FILTER BY VILLE
+    // =========================================================
+    public function index(Request $request)
     {
         try {
-            $cooperatives = Cooperative::orderBy('created_at', 'desc')->get();
-            
+            $query = Cooperative::orderBy('created_at', 'desc');
+
+            // ✅ FILTER BY VILLE (IMPORTANT FIX)
+            if ($request->filled('ville')) {
+                $query->whereRaw('LOWER(ville) = ?', [strtolower(trim($request->ville))]);
+            }
+
+            $cooperatives = $query->get();
+
             return response()->json([
                 'success' => true,
                 'data' => $cooperatives,
-                'count' => $cooperatives->count()
-            ], 200);
+                'count' => $cooperatives->count(),
+            ]);
+
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Error fetching cooperatives: ' . $e->getMessage()
+                'message' => $e->getMessage(),
             ], 500);
         }
     }
 
+    // =========================================================
+    // CREATE
+    // =========================================================
     public function store(Request $request)
     {
         try {
@@ -35,6 +49,10 @@ class CooperativeController extends Controller
                 'email' => 'required|email|unique:cooperatives,email',
                 'description' => 'nullable|string',
                 'adresse' => 'nullable|string',
+
+                // ✅ IMPORTANT FIELD
+                'ville' => 'nullable|string|max:100',
+
                 'image' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
                 'contact' => 'nullable|string',
                 'tele' => 'nullable|string',
@@ -46,17 +64,17 @@ class CooperativeController extends Controller
             if ($validator->fails()) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Validation error',
-                    'errors' => $validator->errors()
+                    'errors' => $validator->errors(),
                 ], 422);
             }
 
+            // IMAGE UPLOAD
             $imagePath = null;
             if ($request->hasFile('image')) {
-                $image = $request->file('image');
-                $imageName = time() . '_' . uniqid() . '.' . $image->getClientOriginalExtension();
-                $image->move(public_path('uploads/cooperatives'), $imageName);
-                $imagePath = 'uploads/cooperatives/' . $imageName;
+                $file = $request->file('image');
+                $name = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+                $file->move(public_path('uploads/cooperatives'), $name);
+                $imagePath = 'uploads/cooperatives/' . $name;
             }
 
             $cooperative = Cooperative::create([
@@ -64,6 +82,10 @@ class CooperativeController extends Controller
                 'email' => $request->email,
                 'description' => $request->description,
                 'adresse' => $request->adresse,
+
+                // ✅ FIXED FIELD
+                'ville' => $request->ville,
+
                 'image' => $imagePath,
                 'contact' => $request->contact,
                 'tele' => $request->tele,
@@ -74,34 +96,29 @@ class CooperativeController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Cooperative created successfully',
-                'data' => $cooperative
+                'data' => $cooperative,
+                'message' => 'Created successfully',
             ], 201);
+
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Error creating cooperative: ' . $e->getMessage()
+                'message' => $e->getMessage(),
             ], 500);
         }
     }
 
+    // =========================================================
+    // SHOW
+    // =========================================================
     public function show($id)
     {
-        try {
-            $cooperative = Cooperative::findOrFail($id);
-            
-            return response()->json([
-                'success' => true,
-                'data' => $cooperative
-            ], 200);
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Cooperative not found'
-            ], 404);
-        }
+        return Cooperative::findOrFail($id);
     }
 
+    // =========================================================
+    // UPDATE
+    // =========================================================
     public function update(Request $request, $id)
     {
         try {
@@ -112,71 +129,73 @@ class CooperativeController extends Controller
                 'email' => 'sometimes|email|unique:cooperatives,email,' . $id,
                 'description' => 'nullable|string',
                 'adresse' => 'nullable|string',
+
+                // ✅ FIXED
+                'ville' => 'nullable|string|max:100',
+
                 'image' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
-                'contact' => 'nullable|string',
-                'tele' => 'nullable|string',
-                'instagram' => 'nullable|string',
-                'facebook' => 'nullable|string',
-                'whatsapp' => 'nullable|string',
             ]);
 
             if ($validator->fails()) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Validation error',
-                    'errors' => $validator->errors()
+                    'errors' => $validator->errors(),
                 ], 422);
             }
 
-            // Handle image upload if present
+            // IMAGE UPDATE
             if ($request->hasFile('image')) {
-                // Delete old image if exists
-                if ($cooperative->image && file_exists(public_path('uploads/cooperatives/' . basename($cooperative->image)))) {
-                    unlink(public_path('uploads/cooperatives/' . basename($cooperative->image)));
+                if ($cooperative->image && file_exists(public_path($cooperative->image))) {
+                    unlink(public_path($cooperative->image));
                 }
-                
-                $image = $request->file('image');
-                $imageName = time() . '_' . uniqid() . '.' . $image->getClientOriginalExtension();
-                $image->move(public_path('uploads/cooperatives'), $imageName);
-                $cooperative->image = 'uploads/cooperatives/' . $imageName;
+
+                $file = $request->file('image');
+                $name = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+                $file->move(public_path('uploads/cooperatives'), $name);
+
+                $cooperative->image = 'uploads/cooperatives/' . $name;
             }
 
-            // Update other fields
+            // UPDATE DATA
             $cooperative->update($request->except(['image', '_method']));
 
             return response()->json([
                 'success' => true,
-                'message' => 'Cooperative updated successfully',
-                'data' => $cooperative
-            ], 200);
+                'data' => $cooperative,
+                'message' => 'Updated successfully',
+            ]);
+
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Error updating cooperative: ' . $e->getMessage()
+                'message' => $e->getMessage(),
             ], 500);
         }
     }
 
+    // =========================================================
+    // DELETE
+    // =========================================================
     public function destroy($id)
     {
         try {
             $cooperative = Cooperative::findOrFail($id);
-            
-            // Delete image if exists
-            if ($cooperative->image && file_exists(public_path('uploads/cooperatives/' . basename($cooperative->image)))) {
-                unlink(public_path('uploads/cooperatives/' . basename($cooperative->image)));
+
+            if ($cooperative->image && file_exists(public_path($cooperative->image))) {
+                unlink(public_path($cooperative->image));
             }
-            
+
             $cooperative->delete();
 
             return response()->json([
                 'success' => true,
-                'message' => 'Cooperative deleted successfully'
-            ], 200);
+                'message' => 'Deleted successfully',
+            ]);
+
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Error deleting cooperative: ' . $e->getMessage()
+                'message' => $e->getMessage(),
             ], 500);
         }
     }

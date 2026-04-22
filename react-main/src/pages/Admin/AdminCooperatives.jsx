@@ -14,6 +14,7 @@ const AdminCooperatives = () => {
   const [formData, setFormData] = useState({
     nom: "",
     email: "",
+    ville: "",
     description: "",
     adresse: "",
     contact: "",
@@ -108,6 +109,7 @@ const AdminCooperatives = () => {
     setFormData({
       nom: "",
       email: "",
+      ville: "",
       description: "",
       adresse: "",
       contact: "",
@@ -589,7 +591,7 @@ const AdminCooperatives = () => {
                     placeholder="Nom de la coopérative"
                   />
                 </div>
-
+                
                 {/* Email */}
                 <div className="sm:col-span-1">
                   <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
@@ -608,7 +610,25 @@ const AdminCooperatives = () => {
                     placeholder="contact@cooperative.com"
                   />
                 </div>
+                <div>
+  <label className="block text-sm font-medium text-gray-700 mb-1">
+    Ville
+  </label>
 
+  <select
+    name="ville"
+    value={formData.ville}
+    onChange={handleChange}
+    className="w-full px-3 py-2 border rounded-lg"
+  >
+    <option value="">Choisir ville</option>
+    <option value="Midelt">Midelt</option>
+    <option value="Errachidia">Errachidia</option>
+    <option value="Tinghir">Tinghir</option>
+    <option value="Ouarzazate">Ouarzazate</option>
+    <option value="Zagora">Zagora</option>
+  </select>
+</div>
                 {/* Description */}
                 <div className="sm:col-span-2">
                   <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
