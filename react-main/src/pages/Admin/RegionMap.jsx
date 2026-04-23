@@ -1,9 +1,22 @@
 // src/pages/Admin/RegionMap.jsx
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import axios from "axios";
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  ArcElement,
+  Title,
+  Tooltip,
+  Legend,
+} from "chart.js";
+import { Bar, Pie } from "react-chartjs-2";
+
+ChartJS.register(CategoryScale, LinearScale, BarElement, ArcElement, Title, Tooltip, Legend);
 
 // ============================================================
-// 1. CONSTANTES — SVG paths extraits de l'image de référence
+// 1. CONSTANTES
 // ============================================================
 
 const PROVINCES = [
@@ -11,94 +24,227 @@ const PROVINCES = [
     id: "Midelt",
     label: "ميدلت",
     labelFr: "Midelt",
-    color: "#bbf7d0",
-    selectedColor: "#15803d",
     d: "M 10.0,80.0 L 21.4,90.0 L 29.5,80.9 L 35.5,89.1 L 45.5,88.2 L 50.9,77.3 L 63.2,70.0 L 68.2,72.7 L 75.0,70.9 L 82.7,80.5 L 98.2,77.7 L 106.8,70.9 L 120.9,75.5 L 125.5,70.9 L 135.9,71.4 L 139.5,57.3 L 133.2,51.8 L 134.5,45.9 L 126.4,41.4 L 125.5,36.4 L 112.3,41.4 L 100.0,21.8 L 85.0,24.5 L 77.3,10.9 L 63.6,10.5 L 60.5,19.5 L 53.2,19.1 L 48.6,24.5 L 48.6,44.1 L 41.8,40.0 L 42.7,50.9 L 34.1,50.0 L 30.5,53.2 L 30.5,58.6 L 36.8,60.9 L 35.9,64.5 L 27.7,63.6 L 24.1,73.2 L 13.2,71.8 Z",
   },
   {
     id: "Zagora",
     label: "زاكورة",
     labelFr: "Zagora",
-    color: "#bbf7d0",
-    selectedColor: "#15803d",
     d: "M 83.2,10.0 L 67.3,17.9 L 64.5,23.6 L 46.9,29.9 L 31.6,31.6 L 30.4,27.6 L 22.5,27.6 L 10.6,39.5 L 10.6,53.7 L 25.3,53.1 L 25.9,60.0 L 35.5,67.9 L 28.7,70.2 L 32.7,78.7 L 31.0,91.7 L 41.8,90.0 L 35.0,93.4 L 34.4,108.8 L 39.0,111.0 L 36.7,125.8 L 50.9,126.9 L 57.7,136.6 L 81.0,138.3 L 89.5,126.9 L 91.7,132.6 L 99.1,133.8 L 115.6,104.8 L 138.3,88.3 L 137.7,66.8 L 134.3,62.8 L 124.1,61.7 L 129.8,46.9 L 116.7,31.6 L 116.2,21.9 Z",
   },
   {
     id: "Tinghir",
     label: "تنغير",
     labelFr: "Tinghir",
-    color: "#bbf7d0",
-    selectedColor: "#15803d",
     d: "M 100.8,10.0 L 85.3,16.7 L 77.6,31.2 L 70.4,32.2 L 63.7,22.9 L 59.0,22.9 L 50.2,33.2 L 38.4,33.7 L 34.2,41.0 L 15.2,45.6 L 10.0,65.2 L 20.8,77.1 L 21.3,104.4 L 32.7,102.9 L 47.7,90.0 L 78.6,100.8 L 81.7,112.7 L 94.1,126.6 L 87.9,133.3 L 88.4,139.5 L 104.4,131.7 L 116.8,119.4 L 125.6,93.6 L 134.8,81.7 L 130.2,73.5 L 107.5,72.4 L 92.0,79.1 L 93.1,64.7 L 81.7,61.6 L 72.9,51.8 L 85.8,39.4 L 97.7,36.3 L 107.5,17.7 Z",
   },
   {
     id: "Ouarzazate",
     label: "ورزازات",
     labelFr: "Ouarzazate",
-    color: "#bbf7d0",
-    selectedColor: "#15803d",
-    d: "M 111.8,10.0 L 79.1,15.5 L 72.0,34.3 L 38.8,22.7 L 34.9,33.8 L 10.0,39.9 L 37.1,37.7 L 41.5,27.1 L 57.0,37.7 L 79.1,34.9 L 83.6,18.3 L 95.2,16.6 L 100.2,21.6 L 106.3,16.6 L 106.3,29.4 L 119.0,42.1 L 118.4,74.2 L 95.2,79.1 L 81.4,74.7 L 65.9,89.7 L 63.7,116.2 L 52.6,119.5 L 39.9,108.5 L 24.4,131.1 L 10.0,136.1 L 30.5,138.9 L 29.4,129.5 L 41.5,112.9 L 49.3,124.0 L 66.4,121.7 L 72.0,112.3 L 68.6,94.1 L 85.8,77.5 L 95.2,84.7 L 122.9,76.9 L 122.3,38.8 L 109.6,26.0 Z",
+    d: "M 72.0,10.0 L 55.0,14.0 L 42.0,10.5 L 28.0,16.0 L 18.0,14.0 L 10.0,22.0 L 10.5,36.0 L 20.0,42.0 L 18.5,55.0 L 10.0,62.0 L 15.0,74.0 L 28.0,78.0 L 30.0,90.0 L 22.0,100.0 L 28.0,110.0 L 40.0,106.0 L 48.0,114.0 L 58.0,108.0 L 65.0,118.0 L 78.0,116.0 L 84.0,105.0 L 96.0,100.0 L 108.0,88.0 L 120.0,84.0 L 130.0,72.0 L 128.0,60.0 L 118.0,54.0 L 120.0,40.0 L 112.0,28.0 L 100.0,24.0 L 88.0,14.0 Z",
   },
   {
     id: "Errachidia",
     label: "الرشيدية",
     labelFr: "Errachidia",
-    color: "#bbf7d0",
-    selectedColor: "#15803d",
-    d: "M 105.3,13.5 L 74.7,16.9 L 62.0,10.6 L 59.1,19.2 L 45.2,22.7 L 30.2,18.7 L 10.0,27.3 L 13.5,31.4 L 33.1,22.7 L 47.6,26.8 L 66.6,18.1 L 70.1,23.3 L 82.2,18.1 L 96.1,21.0 L 95.5,31.4 L 104.2,38.9 L 85.1,55.6 L 68.4,58.0 L 60.8,82.2 L 78.8,90.9 L 64.3,105.3 L 63.7,113.4 L 36.6,118.6 L 10.0,134.2 L 10.0,139.4 L 41.2,121.5 L 68.4,115.7 L 68.4,108.2 L 86.8,90.3 L 86.3,84.5 L 78.2,86.3 L 67.8,78.2 L 72.4,61.4 L 79.9,63.2 L 93.8,52.8 L 109.4,51.6 L 108.2,36.0 L 98.4,26.2 Z",
+    d: "M 72.0,10.0 L 58.0,10.5 L 46.0,16.0 L 34.0,14.0 L 22.0,20.0 L 10.0,18.0 L 10.5,32.0 L 18.0,40.0 L 14.0,52.0 L 10.0,64.0 L 18.0,76.0 L 30.0,80.0 L 32.0,94.0 L 22.0,108.0 L 10.0,118.0 L 10.5,132.0 L 26.0,128.0 L 40.0,118.0 L 52.0,124.0 L 62.0,116.0 L 76.0,120.0 L 90.0,112.0 L 100.0,98.0 L 110.0,90.0 L 118.0,78.0 L 116.0,64.0 L 104.0,56.0 L 102.0,42.0 L 110.0,32.0 L 108.0,20.0 L 96.0,14.0 Z",
   },
 ];
 
 const API_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
 
+const PALETTE = {
+  navy:     "#1a2060",
+  gold:     "#c9a84c",
+  emerald:  "#1a7a4a",
+  emeraldL: "#2d9e68",
+  bg:       "#f8f7f4",
+  border:   "rgba(26,32,96,0.09)",
+};
+
+const BAR_COLORS = [
+  "#1a7a4a", "#c9a84c", "#1a2060", "#2d9e68", "#e8c76a",
+];
+const PIE_COLORS = [
+  "#1a2060", "#c9a84c", "#1a7a4a", "#e8c76a", "#2d9e68",
+  "#2a3080", "#f0d882", "#34b87a",
+];
+
 // ============================================================
-// 2. COMPOSANTS UI (inchangés)
+// 2. SUB-COMPONENTS
 // ============================================================
 
-const ModernCard = ({ children, className = "" }) => (
-  <div className={`relative bg-white rounded-2xl transition-all duration-300 ${className}`}>
-    <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-emerald-500/20 via-transparent to-emerald-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-    <div className="relative bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300">
+const SectionLabel = ({ children, accent = false }) => (
+  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
+    <div style={{
+      width: 3, height: 18, borderRadius: 3,
+      background: accent
+        ? `linear-gradient(180deg, ${PALETTE.gold}, ${PALETTE.navy})`
+        : `linear-gradient(180deg, ${PALETTE.navy}, ${PALETTE.emerald})`,
+    }} />
+    <span style={{ fontSize: 12, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", color: PALETTE.navy, opacity: 0.75 }}>
       {children}
+    </span>
+  </div>
+);
+
+const CountPill = ({ value, active }) => (
+  <span style={{
+    display: "inline-block",
+    fontSize: 10, fontWeight: 800,
+    padding: "2px 8px", borderRadius: 20,
+    background: active ? PALETTE.gold : "rgba(26,32,96,0.07)",
+    color: active ? PALETTE.navy : "#64748b",
+    transition: "all 0.25s",
+    minWidth: 22, textAlign: "center",
+  }}>
+    {value ?? "–"}
+  </span>
+);
+
+const BarChartSection = ({ allCoopCounts }) => {
+  const labels = PROVINCES.map((p) => p.labelFr);
+  const values = PROVINCES.map((p) => allCoopCounts[p.id] ?? 0);
+
+  const data = {
+    labels,
+    datasets: [{
+      label: "Coopératives",
+      data: values,
+      backgroundColor: BAR_COLORS.map((c) => c + "cc"),
+      borderColor: BAR_COLORS,
+      borderWidth: 2,
+      borderRadius: 8,
+      borderSkipped: false,
+    }],
+  };
+
+  const options = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        backgroundColor: PALETTE.navy,
+        titleColor: PALETTE.gold,
+        bodyColor: "#fff",
+        padding: 10,
+        cornerRadius: 8,
+        callbacks: {
+          title: (items) => items[0].label,
+          label: (item) => ` ${item.raw} coopérative${item.raw !== 1 ? "s" : ""}`,
+        },
+      },
+    },
+    scales: {
+      x: {
+        grid: { display: false },
+        ticks: { color: "#475569", font: { size: 11, weight: "600" } },
+      },
+      y: {
+        grid: { color: "rgba(26,32,96,0.05)", drawBorder: false },
+        ticks: { color: "#94a3b8", font: { size: 11 }, stepSize: 1 },
+        beginAtZero: true,
+      },
+    },
+  };
+
+  return (
+    <div>
+      <SectionLabel>Coopératives par province</SectionLabel>
+      <div style={{ height: 180 }}>
+        <Bar data={data} options={options} />
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
-const ModernButton = ({ children, onClick, isActive, className = "" }) => (
-  <button
-    onClick={onClick}
-    className={`
-      relative px-4 py-2 rounded-xl text-sm font-medium transition-all duration-300
-      transform hover:scale-105 active:scale-95
-      ${isActive
-        ? "bg-gradient-to-r from-emerald-600 to-emerald-700 text-white shadow-lg shadow-emerald-500/25"
-        : "bg-white text-stone-600 border border-stone-200 hover:border-emerald-300 hover:text-emerald-700 hover:shadow-md"
-      }
-      ${className}
-    `}
-  >
-    {children}
-  </button>
-);
+const PieChartSection = ({ cooperatives }) => {
+  const categoryCounts = cooperatives.reduce((acc, coop) => {
+    const cat = coop.categorie || coop.category || coop.type || "Autre";
+    acc[cat] = (acc[cat] || 0) + 1;
+    return acc;
+  }, {});
 
-const ModernIcon = ({ children, className = "" }) => (
-  <div className={`relative overflow-hidden rounded-xl ${className}`}>
-    {children}
-  </div>
-);
+  const labels = Object.keys(categoryCounts);
+  const values = Object.values(categoryCounts);
+
+  if (labels.length === 0) return null;
+
+  const data = {
+    labels,
+    datasets: [{
+      data: values,
+      backgroundColor: PIE_COLORS.slice(0, labels.length).map((c) => c + "dd"),
+      borderColor: PIE_COLORS.slice(0, labels.length),
+      borderWidth: 2,
+      hoverOffset: 8,
+    }],
+  };
+
+  const options = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        position: "bottom",
+        labels: { color: "#475569", font: { size: 11 }, padding: 14, usePointStyle: true, pointStyleWidth: 8 },
+      },
+      tooltip: {
+        backgroundColor: PALETTE.navy,
+        titleColor: PALETTE.gold,
+        bodyColor: "#fff",
+        padding: 10,
+        cornerRadius: 8,
+      },
+    },
+  };
+
+  return (
+    <div style={{ marginTop: 24 }}>
+      <SectionLabel accent>Répartition par catégorie</SectionLabel>
+      <div style={{ height: 200 }}>
+        <Pie data={data} options={options} />
+      </div>
+    </div>
+  );
+};
 
 // ============================================================
-// 3. COMPOSANT PRINCIPAL
+// 3. MAIN COMPONENT
 // ============================================================
 
 const RegionMap = () => {
-  const [selected, setSelected]       = useState(null);
-  const [hovered, setHovered]         = useState(null);
+  const [selected, setSelected]         = useState(null);
+  const [hovered, setHovered]           = useState(null);
   const [cooperatives, setCooperatives] = useState([]);
-  const [loading, setLoading]         = useState(false);
-  const [error, setError]             = useState(null);
+  const [loading, setLoading]           = useState(false);
+  const [error, setError]               = useState(null);
+  const [allCoopCounts, setAllCoopCounts] = useState({});
 
   const token = localStorage.getItem("token");
+
+  // Pre-fetch all province counts for bar chart
+  useEffect(() => {
+    const fetchAll = async () => {
+      const counts = {};
+      await Promise.all(
+        PROVINCES.map(async (p) => {
+          try {
+            const res = await axios.get(
+              `${API_URL}/api/admin/cooperatives?ville=${p.id}`,
+              { headers: { Authorization: `Bearer ${token}` } }
+            );
+            const d = res.data.data ?? res.data ?? [];
+            counts[p.id] = Array.isArray(d) ? d.length : 0;
+          } catch { counts[p.id] = 0; }
+        })
+      );
+      setAllCoopCounts(counts);
+    };
+    fetchAll();
+  }, [token]);
 
   const handleProvinceClick = async (provinceId) => {
     if (selected === provinceId) return;
@@ -121,249 +267,374 @@ const RegionMap = () => {
     }
   };
 
-  const getProvinceFill = (province) => {
-    if (province.id === selected) return "rgba(201,168,76,0.10)";
-    if (province.id === hovered)  return "rgba(59,91,219,0.06)";
-    return "transparent";
-  };
+  const getProvinceFill   = (p) => p.id === selected ? "rgba(201,168,76,0.20)" : p.id === hovered ? "rgba(26,122,74,0.10)" : "rgba(26,32,96,0.03)";
+  const getProvinceStroke = (p) => p.id === selected ? PALETTE.gold : p.id === hovered ? PALETTE.emerald : PALETTE.navy;
 
-  const getProvinceStroke = (province) => {
-    if (province.id === selected) return "#c9a84c";
-    if (province.id === hovered)  return "#3b5bdb";
-    return "#1a2060";
-  };
+  const totalCoops = Object.values(allCoopCounts).reduce((a, b) => a + b, 0);
 
   return (
-    <div className="mt-8 px-4">
-      <ModernCard className="group">
+    <div style={{ marginTop: 32, fontFamily: "'Outfit', 'Cairo', sans-serif" }}>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Cairo:wght@400;700;900&display=swap');
 
-        {/* ── Bannière supérieure identique à l'image ── */}
+        .rm-card {
+          background: #fff;
+          border-radius: 20px;
+          border: 1px solid rgba(26,32,96,0.08);
+          box-shadow: 0 2px 8px rgba(26,32,96,0.06), 0 20px 60px rgba(26,32,96,0.08);
+          overflow: hidden;
+        }
+        .rm-province-tile {
+          display: flex; flex-direction: column; align-items: center;
+          gap: 6px; cursor: pointer; flex: 1; min-width: 0;
+          padding: 10px 6px 6px;
+          border-radius: 14px;
+          transition: all 0.22s ease;
+          border: 1.5px solid transparent;
+        }
+        .rm-province-tile:hover  { background: rgba(26,122,74,0.05); border-color: rgba(26,122,74,0.15); }
+        .rm-province-tile.active { background: rgba(201,168,76,0.08); border-color: rgba(201,168,76,0.35); }
+
+        .rm-coop-card {
+          background: #fff;
+          border: 1px solid rgba(26,32,96,0.08);
+          border-radius: 14px; padding: 14px 16px;
+          transition: all 0.2s ease;
+          animation: rmSlideIn 0.35s ease-out both;
+        }
+        .rm-coop-card:hover {
+          border-color: rgba(26,122,74,0.3);
+          box-shadow: 0 4px 20px rgba(26,122,74,0.12);
+          transform: translateY(-1px);
+        }
+        .rm-scrollpane {
+          max-height: 420px; overflow-y: auto; padding-right: 6px;
+        }
+        .rm-scrollpane::-webkit-scrollbar { width: 5px; }
+        .rm-scrollpane::-webkit-scrollbar-track { background: transparent; }
+        .rm-scrollpane::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        .rm-scrollpane::-webkit-scrollbar-thumb:hover { background: ${PALETTE.emeraldL}; }
+
+        @keyframes rmFadeUp  { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+        @keyframes rmSlideIn { from { opacity: 0; transform: translateX(-14px); } to { opacity: 1; transform: none; } }
+        .rm-fade-up  { animation: rmFadeUp 0.45s ease-out; }
+
+        .rm-btn {
+          padding: 6px 14px; border-radius: 10px;
+          font-size: 12px; font-weight: 600;
+          cursor: pointer; transition: all 0.2s;
+          border: 1.5px solid rgba(26,32,96,0.12);
+          background: #fff; color: #475569;
+        }
+        .rm-btn:hover  { border-color: ${PALETTE.emerald}; color: ${PALETTE.emerald}; background: rgba(26,122,74,0.04); }
+        .rm-btn.active { background: ${PALETTE.navy}; color: #fff; border-color: ${PALETTE.navy}; box-shadow: 0 4px 12px rgba(26,32,96,0.25); }
+
+        .rm-stat {
+          display: flex; flex-direction: column; align-items: center;
+          padding: 8px 18px; border-radius: 12px;
+          background: rgba(255,255,255,0.10); border: 1px solid rgba(255,255,255,0.18);
+          min-width: 72px;
+        }
+        .rm-divider-v {
+          width: 1px; margin: 20px 0;
+          background: linear-gradient(180deg, transparent, rgba(26,32,96,0.10) 30%, rgba(26,32,96,0.10) 70%, transparent);
+        }
+        .rm-empty-icon {
+          width: 72px; height: 72px; border-radius: 18px;
+          display: flex; align-items: center; justify-content: center;
+          background: linear-gradient(135deg, rgba(26,32,96,0.06), rgba(26,122,74,0.08));
+          border: 1px solid rgba(26,32,96,0.08);
+          margin-bottom: 16px;
+        }
+      `}</style>
+
+      <div className="rm-card">
+
+        {/* ── Header ── */}
         <div style={{
-          background: "#1a2060",
-          display: "flex",
-          justifyContent: "flex-end",
-          alignItems: "center",
-          padding: "10px 22px",
-          borderRadius: "16px 16px 0 0",
+          background: `linear-gradient(135deg, ${PALETTE.navy} 0%, #0e1540 100%)`,
+          padding: "16px 24px",
+          display: "flex", alignItems: "center", justifyContent: "space-between",
         }}>
+          {/* Stats */}
+          <div style={{ display: "flex", gap: 10 }}>
+            <div className="rm-stat">
+              <span style={{ fontSize: 22, fontWeight: 800, color: "#fff", lineHeight: 1.1 }}>{PROVINCES.length}</span>
+              <span style={{ fontSize: 10, color: "rgba(255,255,255,0.55)", marginTop: 2, fontWeight: 500 }}>Provinces</span>
+            </div>
+            <div className="rm-stat">
+              <span style={{ fontSize: 22, fontWeight: 800, color: PALETTE.gold, lineHeight: 1.1 }}>{totalCoops}</span>
+              <span style={{ fontSize: 10, color: "rgba(255,255,255,0.55)", marginTop: 2, fontWeight: 500 }}>Coopératives</span>
+            </div>
+          </div>
+
+          {/* Title */}
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <span style={{
-              fontFamily: "'Cairo', 'Amiri', Arial, sans-serif",
-              fontSize: 20, fontWeight: 700, color: "#fff", direction: "rtl",
-            }}>
-              عين الجهة
-            </span>
-            <span style={{ color: "#c9a84c", fontSize: 24, fontWeight: 900, letterSpacing: "-3px", lineHeight: 1 }}>
-              ///
-            </span>
+              fontFamily: "'Cairo', sans-serif",
+              fontSize: 22, fontWeight: 700, color: "#fff", direction: "rtl",
+            }}>عين الجهة</span>
+            <span style={{ color: PALETTE.gold, fontSize: 26, fontWeight: 900, letterSpacing: "-3px", lineHeight: 1 }}>///</span>
           </div>
         </div>
 
-        {/* ── Contenu principal ── */}
-        <div className="flex flex-col lg:flex-row">
+        {/* ── Body ── */}
+        <div style={{ display: "flex", flexWrap: "wrap" }}>
 
-          {/* ── Carte : provinces côte à côte comme l'image ── */}
-          <div className="p-6 flex-shrink-0 w-full lg:w-auto">
+          {/* LEFT: Map + Charts */}
+          <div style={{ padding: "22px 20px 22px", flexShrink: 0, width: "100%", maxWidth: 540, boxSizing: "border-box" }}>
+
+            {/* Province tiles */}
             <div style={{
-              display: "flex",
-              justifyContent: "space-around",
-              alignItems: "flex-end",
-              gap: 8,
-              padding: "8px 0 4px",
+              display: "flex", justifyContent: "space-around", alignItems: "flex-end",
+              gap: 4, padding: "10px 4px 6px",
+              background: "rgba(26,32,96,0.02)", borderRadius: 16,
+              border: "1px solid rgba(26,32,96,0.05)",
             }}>
               {PROVINCES.map((province) => (
                 <div
                   key={province.id}
+                  className={`rm-province-tile${selected === province.id ? " active" : ""}`}
                   onClick={() => handleProvinceClick(province.id)}
                   onMouseEnter={() => setHovered(province.id)}
                   onMouseLeave={() => setHovered(null)}
                   style={{
-                    display: "flex", flexDirection: "column", alignItems: "center",
-                    gap: 8, cursor: "pointer", flex: 1, minWidth: 0,
-                    transition: "transform 0.2s",
-                    transform: hovered === province.id || selected === province.id ? "scale(1.06)" : "scale(1)",
+                    transform: (hovered === province.id || selected === province.id) ? "scale(1.07) translateY(-2px)" : "scale(1)",
                   }}
                 >
-                  {/* Label arabe au-dessus */}
                   <span style={{
-                    fontFamily: "'Cairo', 'Amiri', Arial, sans-serif",
-                    fontSize: 14, fontWeight: 700, direction: "rtl",
+                    fontFamily: "'Cairo', sans-serif",
+                    fontSize: 12, fontWeight: 700, direction: "rtl",
                     textAlign: "center", whiteSpace: "nowrap",
-                    color: selected === province.id ? "#c9a84c"
-                          : hovered === province.id  ? "#3b5bdb"
-                          : "#1a2060",
+                    color: selected === province.id ? PALETTE.gold : hovered === province.id ? PALETTE.emerald : PALETTE.navy,
                     transition: "color 0.2s",
                   }}>
                     {province.label}
                   </span>
 
-                  {/* Forme SVG de la province (paths extraits de l'image) */}
-                  <svg
-                    viewBox="0 0 150 150"
-                    xmlns="http://www.w3.org/2000/svg"
-                    style={{ width: "100%", maxWidth: 140, display: "block" }}
-                  >
+                  <svg viewBox="0 0 150 150" xmlns="http://www.w3.org/2000/svg"
+                    style={{ width: "100%", maxWidth: 110, display: "block" }}>
+                    <defs>
+                      <filter id={`sh-${province.id}`}>
+                        <feDropShadow dx="0" dy="2" stdDeviation="3"
+                          floodColor={selected === province.id ? PALETTE.gold : PALETTE.navy}
+                          floodOpacity="0.18" />
+                      </filter>
+                    </defs>
                     <path
                       d={province.d}
                       fill={getProvinceFill(province)}
                       stroke={getProvinceStroke(province)}
-                      strokeWidth={selected === province.id ? 2.5 : 1.8}
-                      strokeLinejoin="round"
-                      strokeLinecap="round"
+                      strokeWidth={selected === province.id ? 2.8 : 1.6}
+                      strokeLinejoin="round" strokeLinecap="round"
+                      filter={(selected === province.id || hovered === province.id) ? `url(#sh-${province.id})` : "none"}
                       style={{ transition: "stroke 0.2s, fill 0.2s, stroke-width 0.2s" }}
                     />
                   </svg>
+
+                  <CountPill value={allCoopCounts[province.id]} active={selected === province.id} />
                 </div>
               ))}
             </div>
 
-            {/* Légende boutons */}
-            <div className="mt-5 flex flex-wrap gap-2 justify-center">
+            {/* Province Buttons */}
+            <div style={{ marginTop: 14, display: "flex", flexWrap: "wrap", gap: 6, justifyContent: "center" }}>
               {PROVINCES.map((p) => (
-                <ModernButton key={p.id} onClick={() => handleProvinceClick(p.id)} isActive={selected === p.id}>
+                <button key={p.id} className={`rm-btn${selected === p.id ? " active" : ""}`}
+                  onClick={() => handleProvinceClick(p.id)}>
                   {p.labelFr}
-                </ModernButton>
+                </button>
               ))}
             </div>
+
+            {/* Thin divider */}
+            <div style={{ height: 1, background: "linear-gradient(90deg, transparent, rgba(26,32,96,0.08), transparent)", margin: "20px 0" }} />
+
+            {/* Bar Chart */}
+            <BarChartSection allCoopCounts={allCoopCounts} />
+
+            {/* Pie Chart — shown when a province is selected and has categories */}
+            {selected && !loading && cooperatives.length > 0 && (
+              <PieChartSection cooperatives={cooperatives} />
+            )}
           </div>
 
-          {/* Séparateur */}
-          <div className="hidden lg:block relative">
-            <div className="absolute inset-y-0 left-0 w-px bg-gradient-to-b from-transparent via-stone-200 to-transparent" />
-          </div>
-          <div className="lg:hidden h-px bg-gradient-to-r from-transparent via-stone-200 to-transparent mx-8" />
+          {/* Vertical divider (desktop) */}
+          <div className="rm-divider-v" style={{ display: "none" }} />
+          <div style={{
+            width: 1, margin: "20px 0", flexShrink: 0,
+            background: "linear-gradient(180deg, transparent, rgba(26,32,96,0.09) 30%, rgba(26,32,96,0.09) 70%, transparent)",
+          }} />
 
-          {/* ── Panneau latéral coopératives (logique inchangée) ── */}
-          <div className="flex-1 p-8">
+          {/* RIGHT: Cooperatives panel */}
+          <div style={{ flex: 1, minWidth: 280, padding: "22px 24px 22px" }}>
+
+            {/* Empty state */}
             {!selected && (
-              <div className="flex flex-col items-center justify-center h-full min-h-[300px] text-center">
-                <div className="relative">
-                  <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/20 to-emerald-600/20 rounded-full blur-2xl animate-pulse" />
-                  <div className="relative w-24 h-24 bg-gradient-to-br from-emerald-100 to-emerald-200 rounded-2xl flex items-center justify-center mb-6 shadow-lg">
-                    <svg className="w-12 h-12 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
-                    </svg>
-                  </div>
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%", minHeight: 300, textAlign: "center" }}>
+                <div className="rm-empty-icon">
+                  <svg width="32" height="32" fill="none" stroke={PALETTE.navy} strokeWidth="1.4" viewBox="0 0 24 24" style={{ opacity: 0.5 }}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+                  </svg>
                 </div>
-                <p className="text-lg font-semibold text-stone-700 mb-2">Explorez la région</p>
-                <p className="text-sm text-stone-500 max-w-xs">
+                <p style={{ fontSize: 15, fontWeight: 700, color: PALETTE.navy, marginBottom: 8 }}>Explorez la région</p>
+                <p style={{ fontSize: 13, color: "#94a3b8", maxWidth: 240, lineHeight: 1.65 }}>
                   Sélectionnez une province sur la carte pour découvrir ses coopératives et leurs services
                 </p>
+                <div style={{ marginTop: 22, display: "flex", gap: 5, alignItems: "center" }}>
+                  {[0.25, 0.55, 0.85].map((op, i) => (
+                    <span key={i} style={{ fontSize: 18, color: PALETTE.gold, opacity: op, fontWeight: 800 }}>←</span>
+                  ))}
+                  <span style={{ fontSize: 11, color: "#94a3b8", marginLeft: 6 }}>Cliquez sur une province</span>
+                </div>
               </div>
             )}
 
+            {/* Selected province */}
             {selected && (
-              <div className="animate-fadeIn">
-                <div className="flex items-center justify-between mb-6 pb-4 border-b border-stone-100">
+              <div className="rm-fade-up">
+                {/* Panel header */}
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20, paddingBottom: 16, borderBottom: "1px solid rgba(26,32,96,0.07)" }}>
                   <div>
-                    <h3 className="text-xl font-bold text-stone-800">
+                    <h3 style={{ fontSize: 18, fontWeight: 800, color: PALETTE.navy, marginBottom: 5 }}>
                       Province de{" "}
-                      <span className="bg-gradient-to-r from-emerald-600 to-emerald-700 bg-clip-text text-transparent">
+                      <span style={{ color: PALETTE.emerald }}>
                         {PROVINCES.find((p) => p.id === selected)?.labelFr || selected}
                       </span>
                     </h3>
-                    <div className="flex items-center gap-2 mt-1">
-                      <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
-                      <p className="text-xs text-stone-500">
+                    <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
+                      <span style={{ width: 7, height: 7, borderRadius: "50%", background: PALETTE.emeraldL, display: "inline-block", animation: "pulse 2s infinite" }} />
+                      <span style={{ fontSize: 12, color: "#64748b" }}>
                         {loading
-                          ? "Chargement en cours..."
+                          ? "Chargement en cours…"
                           : `${cooperatives.length} coopérative${cooperatives.length !== 1 ? "s" : ""} disponible${cooperatives.length !== 1 ? "s" : ""}`}
-                      </p>
+                      </span>
                     </div>
                   </div>
                   <button
                     onClick={() => { setSelected(null); setCooperatives([]); }}
-                    className="p-2 rounded-xl text-stone-400 hover:text-stone-600 hover:bg-stone-100 transition-all duration-300 transform hover:scale-110 active:scale-95"
+                    style={{
+                      padding: "7px", borderRadius: 10, border: "1.5px solid rgba(26,32,96,0.10)",
+                      background: "#fff", cursor: "pointer", color: "#94a3b8",
+                      transition: "all 0.2s", lineHeight: 0,
+                    }}
                     title="Désélectionner"
+                    onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(26,32,96,0.06)"; e.currentTarget.style.color = PALETTE.navy; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.background = "#fff"; e.currentTarget.style.color = "#94a3b8"; }}
                   >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.2" d="M6 18L18 6M6 6l12 12" />
                     </svg>
                   </button>
                 </div>
 
+                {/* Loading */}
                 {loading && (
-                  <div className="flex flex-col items-center justify-center py-12">
-                    <div className="relative">
-                      <div className="w-12 h-12 border-4 border-stone-200 border-t-emerald-600 rounded-full animate-spin" />
-                      <div className="absolute inset-0 w-12 h-12 border-4 border-emerald-600/20 rounded-full" />
-                    </div>
-                    <p className="text-sm text-stone-500 mt-4">Chargement des coopératives...</p>
+                  <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "48px 0" }}>
+                    <div style={{
+                      width: 44, height: 44, borderRadius: "50%",
+                      border: `3px solid rgba(26,32,96,0.10)`,
+                      borderTopColor: PALETTE.emerald,
+                      animation: "spin 0.75s linear infinite",
+                    }} />
+                    <p style={{ fontSize: 12, color: "#94a3b8", marginTop: 14 }}>Chargement des coopératives…</p>
+                    <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
                   </div>
                 )}
 
+                {/* Error */}
                 {!loading && error && (
-                  <div className="flex items-center gap-3 bg-gradient-to-r from-red-50 to-red-100/50 border border-red-200 rounded-xl px-4 py-3 animate-slideIn">
-                    <div className="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center">
-                      <svg className="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  <div style={{
+                    display: "flex", alignItems: "center", gap: 12,
+                    background: "#fef2f2", border: "1px solid #fecaca",
+                    borderRadius: 12, padding: "12px 16px",
+                  }}>
+                    <div style={{ width: 34, height: 34, borderRadius: 9, background: "#fee2e2", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                      <svg width="16" height="16" fill="none" stroke="#dc2626" strokeWidth="2" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
                     </div>
-                    <p className="text-sm text-red-700 flex-1">{error}</p>
+                    <p style={{ fontSize: 13, color: "#b91c1c" }}>{error}</p>
                   </div>
                 )}
 
+                {/* Empty cooperatives */}
                 {!loading && !error && cooperatives.length === 0 && (
-                  <div className="flex flex-col items-center justify-center py-12 text-center">
-                    <div className="w-20 h-20 bg-gradient-to-br from-stone-100 to-stone-200 rounded-2xl flex items-center justify-center mb-4">
-                      <svg className="w-10 h-10 text-stone-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                  <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "48px 0", textAlign: "center" }}>
+                    <div style={{
+                      width: 64, height: 64, borderRadius: 16,
+                      background: "rgba(26,32,96,0.05)", border: "1px solid rgba(26,32,96,0.08)",
+                      display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 14,
+                    }}>
+                      <svg width="28" height="28" fill="none" stroke="#94a3b8" strokeWidth="1.5" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                       </svg>
                     </div>
-                    <p className="text-base font-medium text-stone-600 mb-1">Aucune coopérative trouvée</p>
-                    <p className="text-sm text-stone-400">
+                    <p style={{ fontSize: 14, fontWeight: 600, color: "#475569", marginBottom: 6 }}>Aucune coopérative trouvée</p>
+                    <p style={{ fontSize: 12, color: "#94a3b8" }}>
                       Aucune coopérative n'est encore enregistrée dans{" "}
                       {PROVINCES.find((p) => p.id === selected)?.labelFr || selected}
                     </p>
                   </div>
                 )}
 
+                {/* Cooperatives list */}
                 {!loading && !error && cooperatives.length > 0 && (
-                  <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
+                  <div className="rm-scrollpane" style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                     {cooperatives.map((coop, index) => (
                       <div
                         key={coop.id}
-                        className="group relative bg-white border border-stone-200 rounded-xl p-4 transition-all duration-300 hover:shadow-xl hover:border-emerald-300 hover:scale-[1.02] animate-slideIn"
-                        style={{ animationDelay: `${index * 50}ms` }}
+                        className="rm-coop-card"
+                        style={{ animationDelay: `${index * 45}ms` }}
                       >
-                        <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/0 via-emerald-500/5 to-emerald-500/0 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                        <div className="relative flex items-start gap-4">
-                          <div className="flex-shrink-0">
-                            <div className="w-12 h-12 rounded-xl overflow-hidden bg-gradient-to-br from-emerald-100 to-emerald-200 shadow-md group-hover:shadow-lg transition-all duration-300">
-                              {coop.image ? (
-                                <img
-                                  src={`http://127.0.0.1:8000/${coop.image}`}
-                                  alt={coop.nom}
-                                  className="w-full h-full object-cover"
-                                  onError={(e) => (e.target.style.display = "none")}
-                                />
-                              ) : (
-                                <div className="w-full h-full flex items-center justify-center">
-                                  <svg className="w-6 h-6 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16" />
-                                  </svg>
-                                </div>
-                              )}
-                            </div>
+                        <div style={{ display: "flex", alignItems: "flex-start", gap: 14 }}>
+                          <div style={{
+                            width: 46, height: 46, borderRadius: 12, overflow: "hidden", flexShrink: 0,
+                            background: `linear-gradient(135deg, rgba(26,122,74,0.12), rgba(26,32,96,0.08))`,
+                            border: "1px solid rgba(26,32,96,0.08)",
+                            display: "flex", alignItems: "center", justifyContent: "center",
+                          }}>
+                            {coop.image ? (
+                              <img src={`http://127.0.0.1:8000/${coop.image}`} alt={coop.nom}
+                                style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                                onError={(e) => (e.target.style.display = "none")} />
+                            ) : (
+                              <svg width="20" height="20" fill="none" stroke={PALETTE.emerald} strokeWidth="1.5" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16" />
+                              </svg>
+                            )}
                           </div>
-                          <div className="flex-1 min-w-0">
-                            <h4 className="text-base font-semibold text-stone-800 group-hover:text-emerald-700 transition-colors duration-300">
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <h4 style={{ fontSize: 14, fontWeight: 700, color: PALETTE.navy, marginBottom: 3 }}>
                               {coop.nom}
                             </h4>
                             {coop.description && (
-                              <p className="text-sm text-stone-500 mt-1 line-clamp-2">{coop.description}</p>
+                              <p style={{ fontSize: 12, color: "#64748b", marginBottom: 6, lineHeight: 1.55,
+                                overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>
+                                {coop.description}
+                              </p>
                             )}
-                            <div className="flex flex-wrap gap-2 mt-2">
+                            <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
                               {coop.adresse && (
-                                <span className="inline-flex items-center gap-1 text-xs text-stone-500 bg-stone-50 px-2 py-1 rounded-lg">
-                                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                <span style={{
+                                  display: "inline-flex", alignItems: "center", gap: 4,
+                                  fontSize: 11, color: "#64748b",
+                                  background: "rgba(26,32,96,0.04)", borderRadius: 7, padding: "3px 8px",
+                                  border: "1px solid rgba(26,32,96,0.07)",
+                                }}>
+                                  <svg width="10" height="10" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                                   </svg>
                                   {coop.adresse}
                                 </span>
                               )}
                               {coop.region && (
-                                <span className="inline-flex text-xs bg-gradient-to-r from-emerald-100 to-emerald-200 text-emerald-700 rounded-lg px-2 py-1 font-medium">
+                                <span style={{
+                                  fontSize: 11, fontWeight: 600,
+                                  background: "rgba(26,122,74,0.09)", color: PALETTE.emerald,
+                                  borderRadius: 7, padding: "3px 8px",
+                                  border: "1px solid rgba(26,122,74,0.18)",
+                                }}>
                                   {coop.region}
                                 </span>
                               )}
@@ -379,30 +650,9 @@ const RegionMap = () => {
           </div>
         </div>
 
-        {/* Barre de bas */}
-        <div style={{ height: 6, background: "#1a2060", borderRadius: "0 0 16px 16px" }} />
-      </ModernCard>
-
-      <style jsx>{`
-        @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap');
-
-        @keyframes fadeIn {
-          from { opacity: 0; transform: translateY(10px); }
-          to   { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes slideIn {
-          from { opacity: 0; transform: translateX(-20px); }
-          to   { opacity: 1; transform: translateX(0); }
-        }
-
-        .animate-fadeIn  { animation: fadeIn  0.5s ease-out; }
-        .animate-slideIn { animation: slideIn 0.4s ease-out forwards; opacity: 0; }
-
-        .custom-scrollbar::-webkit-scrollbar       { width: 6px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 10px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #10b981; }
-      `}</style>
+        {/* Footer bar */}
+        <div style={{ height: 5, background: `linear-gradient(90deg, ${PALETTE.navy}, ${PALETTE.emerald}, ${PALETTE.gold})`, borderRadius: "0 0 20px 20px" }} />
+      </div>
     </div>
   );
 };

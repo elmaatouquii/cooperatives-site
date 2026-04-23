@@ -5,9 +5,61 @@ import AdminSidebar from "./AdminSidebar";
 import { Link } from "react-router-dom";
 import RegionMap from "./RegionMap";
 
+const PALETTE = {
+  navy:    "#1a2060",
+  gold:    "#c9a84c",
+  emerald: "#1a7a4a",
+  bg:      "#f5f6fa",
+};
+
+// ── Reusable stat card ──────────────────────────────────────
+const StatCard = ({ icon, label, value, accentColor, bgColor }) => (
+  <div style={{
+    background: "#fff",
+    borderRadius: 16,
+    padding: "22px 24px",
+    border: "1px solid rgba(26,32,96,0.08)",
+    boxShadow: "0 2px 8px rgba(26,32,96,0.05)",
+    display: "flex", alignItems: "center", gap: 16,
+    transition: "box-shadow 0.2s, transform 0.2s",
+    cursor: "default",
+  }}
+    onMouseEnter={(e) => { e.currentTarget.style.boxShadow = "0 8px 28px rgba(26,32,96,0.12)"; e.currentTarget.style.transform = "translateY(-2px)"; }}
+    onMouseLeave={(e) => { e.currentTarget.style.boxShadow = "0 2px 8px rgba(26,32,96,0.05)"; e.currentTarget.style.transform = "none"; }}
+  >
+    <div style={{
+      width: 50, height: 50, borderRadius: 14, flexShrink: 0,
+      background: bgColor,
+      display: "flex", alignItems: "center", justifyContent: "center",
+    }}>
+      {icon}
+    </div>
+    <div>
+      <p style={{ fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.07em", color: "#94a3b8", marginBottom: 4 }}>
+        {label}
+      </p>
+      <p style={{ fontSize: 28, fontWeight: 800, color: PALETTE.navy, lineHeight: 1 }}>
+        {value}
+      </p>
+    </div>
+  </div>
+);
+
+// ── Loading spinner ─────────────────────────────────────────
+const Spinner = () => (
+  <div style={{
+    width: 40, height: 40, borderRadius: "50%",
+    border: "3px solid rgba(26,32,96,0.10)",
+    borderTopColor: PALETTE.emerald,
+    animation: "adSpin 0.7s linear infinite",
+    margin: "0 auto 12px",
+  }} />
+);
+
+// ── AdminDashboard ──────────────────────────────────────────
 const AdminDashboard = () => {
-  const [stats, setStats] = useState(null);
-  const [recentMessages, setRecentMessages] = useState([]);
+  const [stats, setStats]                     = useState(null);
+  const [recentMessages, setRecentMessages]   = useState([]);
   const [loadingMessages, setLoadingMessages] = useState(false);
   const token = localStorage.getItem("token");
 
@@ -30,9 +82,7 @@ const AdminDashboard = () => {
         const res = await axios.get("http://127.0.0.1:8000/api/admin/contacts/recent", {
           headers: { Authorization: `Bearer ${token}` },
         });
-        if (res.data.success) {
-          setRecentMessages(res.data.data);
-        }
+        if (res.data.success) setRecentMessages(res.data.data);
       } catch (err) {
         console.error("Erreur messages récents:", err);
       } finally {
@@ -46,179 +96,252 @@ const AdminDashboard = () => {
 
   if (!stats) {
     return (
-      <div className="flex">
+      <div style={{ display: "flex", minHeight: "100vh" }}>
         <AdminSidebar />
-        <div className="flex-1 flex items-center justify-center min-h-screen bg-stone-50">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-2 border-stone-300 border-t-emerald-800 mx-auto mb-4"></div>
-            <p className="text-stone-600 text-sm">Chargement...</p>
+        <div style={{
+          flex: 1, display: "flex", alignItems: "center", justifyContent: "center",
+          background: PALETTE.bg,
+        }}>
+          <div style={{ textAlign: "center" }}>
+            <style>{`@keyframes adSpin { to { transform: rotate(360deg); } }`}</style>
+            <Spinner />
+            <p style={{ fontSize: 13, color: "#94a3b8" }}>Chargement…</p>
           </div>
         </div>
       </div>
     );
   }
 
-  // Nombre de messages non lus
-  const unreadCount = recentMessages.filter(msg => msg.status === 'non lu').length;
+  const unreadCount = recentMessages.filter((m) => m.status === "non lu").length;
 
   return (
-    <div className="flex min-h-screen bg-stone-50">
+    <div style={{ display: "flex", minHeight: "100vh", background: PALETTE.bg, fontFamily: "'Outfit', 'Cairo', sans-serif" }}>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Cairo:wght@400;700&display=swap');
+        @keyframes adSpin    { to { transform: rotate(360deg); } }
+        @keyframes adFadeIn  { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+        .ad-msg-row { transition: background 0.18s; }
+        .ad-msg-row:hover { background: rgba(26,32,96,0.025); }
+        .ad-read-btn { padding: 7px; border-radius: 9px; border: 1.5px solid transparent; background: transparent; cursor: pointer; transition: all 0.18s; line-height: 0; }
+        .ad-read-btn.unread { color: ${PALETTE.emerald}; border-color: rgba(26,122,74,0.18); }
+        .ad-read-btn.unread:hover { background: rgba(26,122,74,0.08); border-color: rgba(26,122,74,0.35); }
+        .ad-read-btn.read   { color: #cbd5e1; cursor: default; }
+      `}</style>
+
       <AdminSidebar />
 
-      <div className="flex-1 p-6 lg:p-8">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-2xl lg:text-3xl font-light text-stone-800 mb-2">
-            Dashboard Admin
-          </h1>
-          <p className="text-stone-500 text-sm">
+      <div style={{ flex: 1, padding: "32px 32px 48px", maxWidth: 1200, animation: "adFadeIn 0.4s ease-out" }}>
+
+        {/* ── Page header ── */}
+        <div style={{ marginBottom: 28 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 6 }}>
+            <div style={{ width: 4, height: 28, borderRadius: 4, background: `linear-gradient(180deg, ${PALETTE.navy}, ${PALETTE.emerald})` }} />
+            <h1 style={{ fontSize: 26, fontWeight: 800, color: PALETTE.navy, margin: 0 }}>
+              Dashboard Admin
+            </h1>
+          </div>
+          <p style={{ fontSize: 13, color: "#94a3b8", marginLeft: 16 }}>
             Bienvenue dans votre espace d'administration
           </p>
         </div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-8">
-          {/* Total Users */}
-          <div className="bg-white p-6 rounded-xl border border-stone-200 hover:border-emerald-700/30 transition-all hover:shadow-md">
-            <div className="flex items-center justify-between mb-3">
-              <div className="w-12 h-12 bg-emerald-100 rounded-lg flex items-center justify-center text-emerald-800">
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                </svg>
-              </div>
-            </div>
-            <p className="text-xs text-stone-500 uppercase tracking-wider mb-1">Total Utilisateurs</p>
-            <p className="text-2xl font-semibold text-stone-800">{stats.total_users}</p>
-          </div>
-
-          {/* Admins */}
-          <div className="bg-white p-6 rounded-xl border border-stone-200 hover:border-emerald-700/30 transition-all hover:shadow-md">
-            <div className="flex items-center justify-between mb-3">
-              <div className="w-12 h-12 bg-stone-200 rounded-lg flex items-center justify-center text-stone-700">
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                </svg>
-              </div>
-            </div>
-            <p className="text-xs text-stone-500 uppercase tracking-wider mb-1">Administrateurs</p>
-            <p className="text-2xl font-semibold text-stone-800">{stats.admins}</p>
-          </div>
-
-          {/* Managers */}
-          <div className="bg-white p-6 rounded-xl border border-stone-200 hover:border-emerald-700/30 transition-all hover:shadow-md">
-            <div className="flex items-center justify-between mb-3">
-              <div className="w-12 h-12 bg-amber-100 rounded-lg flex items-center justify-center text-amber-800">
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                </svg>
-              </div>
-            </div>
-            <p className="text-xs text-stone-500 uppercase tracking-wider mb-1">Gestionnaires</p>
-            <p className="text-2xl font-semibold text-stone-800">{stats.manager}</p>
-          </div>
+        {/* ── Stats Grid ── */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 16, marginBottom: 28 }}>
+          <StatCard
+            label="Total Utilisateurs"
+            value={stats.total_users}
+            bgColor="rgba(26,122,74,0.10)"
+            icon={
+              <svg width="22" height="22" fill="none" stroke={PALETTE.emerald} strokeWidth="1.8" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+              </svg>
+            }
+          />
+          <StatCard
+            label="Administrateurs"
+            value={stats.admins}
+            bgColor="rgba(26,32,96,0.08)"
+            icon={
+              <svg width="22" height="22" fill="none" stroke={PALETTE.navy} strokeWidth="1.8" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+              </svg>
+            }
+          />
+          <StatCard
+            label="Gestionnaires"
+            value={stats.manager}
+            bgColor="rgba(201,168,76,0.12)"
+            icon={
+              <svg width="22" height="22" fill="none" stroke={PALETTE.gold} strokeWidth="1.8" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+              </svg>
+            }
+          />
         </div>
 
-        {/* ── INTERACTIVE REGION MAP ── */}
+        {/* ── Interactive Region Map ── */}
         <RegionMap />
 
-        {/* SECTION CONTACT MESSAGES */}
-        <div className="bg-white rounded-xl border border-stone-200 overflow-hidden mt-6">
-          {/* Header avec badge */}
-          <div className="px-6 py-5 border-b border-stone-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-emerald-100 rounded-lg flex items-center justify-center">
-                <svg className="w-5 h-5 text-emerald-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+        {/* ── Messages Section ── */}
+        <div style={{
+          marginTop: 28,
+          background: "#fff",
+          borderRadius: 18,
+          border: "1px solid rgba(26,32,96,0.08)",
+          boxShadow: "0 2px 8px rgba(26,32,96,0.05)",
+          overflow: "hidden",
+        }}>
+          {/* Messages header */}
+          <div style={{
+            padding: "18px 24px",
+            borderBottom: "1px solid rgba(26,32,96,0.07)",
+            display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap",
+          }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+              <div style={{
+                width: 42, height: 42, borderRadius: 12,
+                background: "rgba(26,122,74,0.09)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+              }}>
+                <svg width="20" height="20" fill="none" stroke={PALETTE.emerald} strokeWidth="1.8" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                 </svg>
               </div>
               <div>
-                <h2 className="text-lg font-medium text-stone-800">Messages de contact</h2>
-                <p className="text-xs text-stone-500">Derniers messages reçus</p>
+                <h2 style={{ fontSize: 16, fontWeight: 700, color: PALETTE.navy, margin: 0 }}>
+                  Messages de contact
+                </h2>
+                <p style={{ fontSize: 12, color: "#94a3b8", margin: 0 }}>Derniers messages reçus</p>
               </div>
             </div>
 
-            <div className="flex items-center gap-4">
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
               {unreadCount > 0 && (
-                <span className="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800 border border-emerald-200">
-                  <span className="w-2 h-2 bg-emerald-600 rounded-full mr-1.5 animate-pulse"></span>
-                  {unreadCount} nouveau{unreadCount > 1 ? 'x' : ''} non lu(s)
+                <span style={{
+                  display: "inline-flex", alignItems: "center", gap: 6,
+                  padding: "6px 12px", borderRadius: 20,
+                  background: "rgba(26,122,74,0.09)",
+                  border: "1px solid rgba(26,122,74,0.2)",
+                  fontSize: 12, fontWeight: 600, color: PALETTE.emerald,
+                }}>
+                  <span style={{
+                    width: 7, height: 7, borderRadius: "50%",
+                    background: PALETTE.emerald, display: "inline-block",
+                    animation: "adPulse 2s infinite",
+                  }} />
+                  {unreadCount} non lu{unreadCount > 1 ? "s" : ""}
+                  <style>{`@keyframes adPulse { 0%,100%{opacity:1}50%{opacity:0.4} }`}</style>
                 </span>
               )}
-
-              <Link
-                to="/admin/contacts"
-                className="text-xs font-medium text-emerald-700 hover:text-emerald-800 flex items-center gap-1 transition-colors"
+              <Link to="/admin/contacts" style={{
+                display: "inline-flex", alignItems: "center", gap: 5,
+                fontSize: 12, fontWeight: 600, color: PALETTE.emerald,
+                textDecoration: "none", padding: "6px 14px", borderRadius: 10,
+                border: "1.5px solid rgba(26,122,74,0.25)",
+                transition: "all 0.18s",
+              }}
+                onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(26,122,74,0.06)"; }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
               >
                 Voir tous
-                <span className="text-lg leading-none">→</span>
+                <span style={{ fontSize: 15 }}>→</span>
               </Link>
             </div>
           </div>
 
-          {/* Liste des messages */}
-          <div className="divide-y divide-stone-100">
+          {/* Messages list */}
+          <div>
             {loadingMessages ? (
-              <div className="px-6 py-8 text-center">
-                <div className="animate-spin h-6 w-6 border-2 border-stone-300 border-t-emerald-800 rounded-full mx-auto mb-2"></div>
-                <p className="text-xs text-stone-500">Chargement des messages...</p>
+              <div style={{ padding: "40px 0", textAlign: "center" }}>
+                <Spinner />
+                <p style={{ fontSize: 12, color: "#94a3b8" }}>Chargement des messages…</p>
               </div>
             ) : recentMessages.length === 0 ? (
-              <div className="px-6 py-8 text-center">
-                <div className="w-12 h-12 bg-stone-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                  <svg className="w-6 h-6 text-stone-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+              <div style={{ padding: "40px 0", textAlign: "center" }}>
+                <div style={{
+                  width: 52, height: 52, borderRadius: "50%",
+                  background: "rgba(26,32,96,0.05)",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  margin: "0 auto 12px",
+                }}>
+                  <svg width="22" height="22" fill="none" stroke="#cbd5e1" strokeWidth="1.8" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
                   </svg>
                 </div>
-                <p className="text-sm text-stone-500">Aucun message pour le moment</p>
+                <p style={{ fontSize: 13, color: "#94a3b8" }}>Aucun message pour le moment</p>
               </div>
             ) : (
-              recentMessages.slice(0, 5).map((message) => (
-                <div key={message.id} className="px-6 py-4 hover:bg-stone-50/50 transition-colors">
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-sm font-medium text-stone-800 truncate">
-                          {message.name}
-                        </span>
-                        {message.status === 'non lu' && (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800">
-                            Non lu
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-xs text-stone-500 mb-1">{message.email}</p>
-                      <p className="text-sm text-stone-600 line-clamp-2">
-                        {message.message}
-                      </p>
-                      <p className="text-xs text-stone-400 mt-2">
-                        {new Date(message.created_at).toLocaleDateString('fr-FR', {
-                          day: 'numeric',
-                          month: 'long',
-                          hour: '2-digit',
-                          minute: '2-digit'
-                        })}
-                      </p>
-                    </div>
-                    <button
-                      onClick={() => {}}
-                      className={`p-2 rounded-lg transition-colors ${
-                        message.status === 'non lu'
-                          ? 'text-emerald-700 hover:bg-emerald-50'
-                          : 'text-stone-300 cursor-not-allowed'
-                      }`}
-                      disabled={message.status !== 'non lu'}
-                      title="Marquer comme lu"
-                    >
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 19v-8.93a2 2 0 01.89-1.664l7-4.666a2 2 0 012.22 0l7 4.666A2 2 0 0121 10.07V19M3 19a2 2 0 002 2h14a2 2 0 002-2M3 19l6.75-4.5M21 19l-6.75-4.5M3 10l6.75 4.5M21 10l-6.75 4.5" />
-                      </svg>
-                    </button>
+              recentMessages.slice(0, 5).map((message, idx) => (
+                <div
+                  key={message.id}
+                  className="ad-msg-row"
+                  style={{
+                    padding: "16px 24px",
+                    borderBottom: idx < Math.min(recentMessages.length, 5) - 1 ? "1px solid rgba(26,32,96,0.05)" : "none",
+                    display: "flex", alignItems: "flex-start", gap: 16,
+                  }}
+                >
+                  {/* Avatar */}
+                  <div style={{
+                    width: 38, height: 38, borderRadius: 12, flexShrink: 0,
+                    background: message.status === "non lu"
+                      ? "rgba(26,122,74,0.10)"
+                      : "rgba(26,32,96,0.05)",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    fontWeight: 800, fontSize: 14,
+                    color: message.status === "non lu" ? PALETTE.emerald : "#94a3b8",
+                    border: message.status === "non lu" ? "1.5px solid rgba(26,122,74,0.2)" : "1.5px solid rgba(26,32,96,0.07)",
+                  }}>
+                    {message.name?.charAt(0).toUpperCase() || "?"}
                   </div>
+
+                  {/* Content */}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 3, flexWrap: "wrap" }}>
+                      <span style={{ fontSize: 14, fontWeight: 700, color: PALETTE.navy }}>
+                        {message.name}
+                      </span>
+                      {message.status === "non lu" && (
+                        <span style={{
+                          fontSize: 10, fontWeight: 700, padding: "2px 8px",
+                          borderRadius: 20, background: "rgba(26,122,74,0.10)",
+                          color: PALETTE.emerald, border: "1px solid rgba(26,122,74,0.2)",
+                          textTransform: "uppercase", letterSpacing: "0.05em",
+                        }}>Non lu</span>
+                      )}
+                    </div>
+                    <p style={{ fontSize: 11, color: "#94a3b8", marginBottom: 5 }}>{message.email}</p>
+                    <p style={{
+                      fontSize: 13, color: "#475569", lineHeight: 1.55,
+                      overflow: "hidden", display: "-webkit-box",
+                      WebkitLineClamp: 2, WebkitBoxOrient: "vertical",
+                    }}>
+                      {message.message}
+                    </p>
+                    <p style={{ fontSize: 11, color: "#cbd5e1", marginTop: 6 }}>
+                      {new Date(message.created_at).toLocaleDateString("fr-FR", {
+                        day: "numeric", month: "long", hour: "2-digit", minute: "2-digit",
+                      })}
+                    </p>
+                  </div>
+
+                  {/* Read button */}
+                  <button
+                    onClick={() => {}}
+                    className={`ad-read-btn ${message.status === "non lu" ? "unread" : "read"}`}
+                    disabled={message.status !== "non lu"}
+                    title="Marquer comme lu"
+                  >
+                    <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M3 19v-8.93a2 2 0 01.89-1.664l7-4.666a2 2 0 012.22 0l7 4.666A2 2 0 0121 10.07V19M3 19a2 2 0 002 2h14a2 2 0 002-2M3 19l6.75-4.5M21 19l-6.75-4.5M3 10l6.75 4.5M21 10l-6.75 4.5" />
+                    </svg>
+                  </button>
                 </div>
               ))
             )}
           </div>
         </div>
+
       </div>
     </div>
   );
